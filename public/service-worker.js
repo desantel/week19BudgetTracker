@@ -8,6 +8,8 @@ const FILES_TO_CACHE = [
   "/assets/js/index.js",
   "/assets/icons/icon-192x192.png",
   "/assets/icons/icon-512x512.png",
+  "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.3.1/materia/bootstrap.css",
+  "https://use.fontawesome.com/releases/v5.8.2/css/all.css",
 ];
 
 // install
