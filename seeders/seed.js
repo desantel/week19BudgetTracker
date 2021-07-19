@@ -6,7 +6,16 @@ mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/budget", {
 });
 
 let transactionSeed = [
-
+  {
+    name:'Input',
+    value: '23941',
+    date: new Date(Date.now()),
+  },
+  {
+    name:'Input',
+    value: '234251',
+    date: new Date(Date.now()),
+  },
 ];
 
 db.Transaction.deleteMany({})

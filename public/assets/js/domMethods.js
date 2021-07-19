@@ -1,2 +1,0 @@
-import { useIndexedDB } from "./indexedDB";
-
