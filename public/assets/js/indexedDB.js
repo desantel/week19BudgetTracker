@@ -1,49 +1,65 @@
-export function checkForIndexedDb() {
-    if (!window.indexedDB) {
-      console.log("Your browser doesn't support a stable version of IndexedDB.");
-      return false;
+const indexedDBName = 'ExpenseDB';
+const storeName = 'ExpenseStore';
+const dbVersion = 1;
+let db;
+
+function setupIndexedDB() {
+  const req = indexedDB.open(indexedDBName, dbVersion);
+
+  req.onupgradeneeded = function(e) {
+    db = e.target.result;
+    db.createObjectStore(storeName, { autoIncrement: true });
+
+    console.log('upgraded');
+  };
+
+  req.onsuccess = function (e) {
+    db = e.target.result;
+    console.log('connected');
+  };
+  req.onerror  = function (e) {
+    console.log(`Error: ${e.target.errorCode}`);
+  };
+}
+
+export function saveRecord(rec) {
+  const transaction = db.transaction(storeName, 'readwrite');
+  const store = transaction.objectStore(storeName);
+  store.add(rec);
+
+  console.log('Saved locally');
+};
+
+function checkDB() {
+  const transaction = db.transaction(storeName, 'readwrite');
+  const store = transaction.objectStore(storeName);
+  const allExpense = store.getAll();
+
+  allExpense.onsuccess = async () => {
+    try {
+      if (!allExpense.result.length) return;
+
+      const res = await fetch('/api/transaction/bulk', {
+        method: 'POST',
+        body: JSON.stringify(allExpense.result),
+        headers: {
+          Accept: 'application/json, text/plain, */*',
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await res.json();
+
+      if (!data.length) return;
+
+      db.transaction(storeName, 'readwrite').objectStore(storeName).clear();
+    } catch (err) {
+      console.log(err);
     }
-    return true;
   }
-  
-  export function useIndexedDb(databaseName, storeName, method, object) {
-    return new Promise((resolve, reject) => {
-      const request = window.indexedDB.open(databaseName, 1);
-      let db,
-        tx,
-        store;
-  
-      request.onupgradeneeded = function(e) {
-        const db = request.result;
-        db.createObjectStore(storeName, { keyPath: "_id" });
-      };
-  
-      request.onerror = function(e) {
-        console.log("There was an error");
-      };
-  
-      request.onsuccess = function(e) {
-        db = request.result;
-        tx = db.transaction(storeName, "readwrite");
-        store = tx.objectStore(storeName);
-  
-        db.onerror = function(e) {
-          console.log("error");
-        };
-        if (method === "put") {
-          store.put(object);
-        } else if (method === "get") {
-          const all = store.getAll();
-          all.onsuccess = function() {
-            resolve(all.result);
-          };
-        } else if (method === "delete") {
-          store.delete(object._id);
-        }
-        tx.oncomplete = function() {
-          db.close();
-        };
-      };
-    });
-  }
-  
+};
+
+export function indexDB() {
+  window.addEventListener('online', checkDB);
+
+  setupIndexedDB();
+};
